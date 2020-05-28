@@ -1,0 +1,19 @@
+bskim-master   ansible_host=10.20.200.125    ansible_connection=local   node_role=infra
+bskim-node1    ansible_host=10.20.200.126    ansible_connection=ssh      ansible_user=root    node_role=infra
+bskim-node2    ansible_host=10.20.200.127    ansible_connection=ssh      ansible_user=root    node_role=infra
+
+[master]
+bskim-master
+
+[master-cluster]
+
+[minions]
+bskim-node1
+bskim-node2
+
+[all]
+bskim-master
+bskim-node1
+bskim-node2
+
+[infra]

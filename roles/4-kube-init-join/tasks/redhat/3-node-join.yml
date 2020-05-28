@@ -1,0 +1,6 @@
+---
+- name: Join nodes with master
+  shell: "kubeadm join --token {{ hostvars[groups['master'][0]].token.stdout }} {{ hostvars[groups['master'][0]].ip_port.stdout }} --ignore-preflight-errors=all --discovery-token-unsafe-skip-ca-verification"
+  register: kubeadm_join_command
+  tags:
+    - output

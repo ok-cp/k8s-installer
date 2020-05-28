@@ -1,0 +1,27 @@
+---
+- name: kubeadm init config (master)
+  include_tasks: 0-master-kubadm-config.yml
+  when:
+    - inventory_hostname in groups['master'] 
+
+- name: token setting
+  include_tasks: 1-token-setting.yml
+  when:
+    - inventory_hostname in groups['master']
+
+- name: Get the IP and port from the master initialization
+  include_tasks: 2-get-master-config.yml
+  when: 
+    - inventory_hostname in groups['master']
+
+- name: Join nodes with master
+  include_tasks: 3-node-join.yml
+  when:
+    - inventory_hostname in groups['minions'] or inventory_hostname in groups['infra']
+  
+- name: kubelet config
+  include_tasks: 4-kubelet-config.yml
+  when:
+    - inventory_hostname in groups['master'] or inventory_hostname in groups['minions'] or inventory_hostname in groups['infra']
+
+#

@@ -1,0 +1,16 @@
+---
+- name: Get the IP and port from the master initialization
+  shell: "echo '{{ master_ip }}:{{ kube_apiserver_port }}'"
+  register: kubeadm_master_ip_port
+
+- name: set var fact
+  set_fact:
+    ip_port: "{{kubeadm_master_ip_port}}"
+  when: kubeadm_master_ip_port.changed
+
+- name: print output of kubeadm_master_ip_port
+  vars:
+    join_ip_port: "{{ ip_port.stdout_lines }}"
+  debug: msg="{{ ip_port.stdout_lines }}"
+  tags:
+    - output

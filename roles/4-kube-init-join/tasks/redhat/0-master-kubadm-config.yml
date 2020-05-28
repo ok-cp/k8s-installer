@@ -1,0 +1,366 @@
+---
+- name: kubeadm aggregate all SANs
+  set_fact:
+    apiserver_sans: >-
+      kubernetes
+      kubernetes.default
+      kubernetes.default.svc
+      kubernetes.default.svc.cluster
+      kubernetes.default.svc.cluster.local
+      {{ master_ip }}
+      {{ ' '.join(groups['master']) }}
+      {%- for host in groups['master'] %}
+      {{ hostvars[host]['ansible_host'] }}
+      {%- endfor %}
+      localhost
+      127.0.0.1
+      10.254.0.1
+      10.96.0.1
+  tags: facts
+
+- name: default addon directory
+  file: path={{ kube_addon_dir }} state=directory
+  register: default_addon_dir
+  ignore_errors: True
+
+- name: kubeadm | Create kubeadm config master
+  template:
+    src: kubeadm-config-1.14.yaml.j2
+    dest: "{{ kube_addon_dir }}/kubeadm-config.yaml"
+  register: kubeadm_config
+
+- name: Kubeadm init phase certs
+  shell: "kubeadm init phase certs all --config={{ kube_addon_dir }}/kubeadm-config.yaml"
+  register: kubeadm_init
+  ignore_errors: True
+
+- name: Delete Certs
+  shell: >
+    rm -rf /etc/kubernetes/pki/{ca.crt,ca.key,sa.key,sa.pub,apiserver.crt,apiserver-etcd-client.key,apiserver-kubelet-client.crt,front-proxy-ca.crt,front-proxy-client.crt,front-proxy-client.key,front-proxy-ca.key,apiserver-kubelet-client.key,apiserver.key,apiserver-etcd-client.crt}
+  ignore_errors: True
+
+- name: Delete etcd Certs
+  shell: > 
+    rm -rf /etc/kubernetes/pki/etcd/{ca.crt,ca.key,healthcheck-client.crt,healthcheck-client.key,peer.crt,peer.key,server.crt,server.key}
+  ignore_errors: True
+
+##########################################################################
+# Copy Cert config file
+##########################################################################
+- name: Create config directory
+  file: path=/etc/kubernetes/pki/conf state=directory
+  register: pki_dir
+  ignore_errors: True
+
+- name: Copy Config file (ca.conf)
+  template:
+    src: ca.conf.j2
+    dest: "/etc/kubernetes/pki/conf/ca.conf"
+
+- name: Copy Config file (etcd-ca.conf)
+  template:
+    src: etcd-ca.conf.j2
+    dest: "/etc/kubernetes/pki/conf/etcd-ca.conf"
+
+- name: Copy Config file (user.conf)
+  template:
+    src: user.conf.j2
+    dest: "/etc/kubernetes/pki/conf/user.conf"
+
+- name: Copy Config file (apiserver.conf)
+  template:
+    src: apiserver.conf.j2
+    dest: "/etc/kubernetes/pki/conf/apiserver.conf"
+
+- name: Copy Config file (apiserver-etcd-client.conf)
+  template:
+    src: apiserver-etcd-client.conf.j2
+    dest: "/etc/kubernetes/pki/conf/apiserver-etcd-client.conf"
+
+- name: Copy Config file (apiserver-kubelet-client.conf)
+  template:
+    src: apiserver-kubelet-client.conf.j2
+    dest: "/etc/kubernetes/pki/conf/apiserver-kubelet-client.conf"
+
+- name: Copy Config file (front-proxy-ca.conf)
+  template:
+    src: front-proxy-ca.conf.j2
+    dest: "/etc/kubernetes/pki/conf/front-proxy-ca.conf"
+
+- name: Copy Config file (front-proxy-client.conf)
+  template:
+    src: front-proxy-client.conf.j2
+    dest: "/etc/kubernetes/pki/conf/front-proxy-client.conf"
+
+- name: Copy Config file (healthcheck-client.conf)
+  template:
+    src: healthcheck-client.conf.j2
+    dest: "/etc/kubernetes/pki/conf/healthcheck-client.conf"
+
+- name: Copy Config file (peer.conf)
+  template:
+    src: peer.conf.j2
+    dest: "/etc/kubernetes/pki/conf/peer.conf"
+
+- name: Copy Config file (server.conf)
+  template:
+    src: server.conf.j2
+    dest: "/etc/kubernetes/pki/conf/server.conf"
+
+##########################################################################
+# Create Certs
+##########################################################################
+# ca
+- name: Create ca.key
+  shell: >
+    openssl genrsa -out /etc/kubernetes/pki/ca.key 2048
+
+- name: Create ca.crt
+  shell: >
+    openssl req -x509 -new -nodes -key /etc/kubernetes/pki/ca.key -days {{ certificates_duration }} -out /etc/kubernetes/pki/ca.crt -extensions v3_ext -config /etc/kubernetes/pki/conf/ca.conf
+
+# sa
+- name: Create sa.key
+  shell: >
+    openssl genrsa -out /etc/kubernetes/pki/sa.key 2048
+
+- name: Create sa.pub
+  shell: >
+    openssl rsa -in /etc/kubernetes/pki/sa.key -pubout -out /etc/kubernetes/pki/sa.pub
+
+# user
+- name: Create user.key
+  shell: >
+    openssl genrsa -out /etc/kubernetes/pki/conf/user.key 2048
+
+- name: Create user.csr
+  shell: >
+    openssl req -new -key /etc/kubernetes/pki/conf/user.key -out /etc/kubernetes/pki/conf/user.csr -config /etc/kubernetes/pki/conf/user.conf
+
+- name: Create user.crt
+  shell: >
+    openssl x509 -req -in /etc/kubernetes/pki/conf/user.csr -CA /etc/kubernetes/pki/ca.crt -CAkey /etc/kubernetes/pki/ca.key -CAcreateserial -out /etc/kubernetes/pki/conf/user.crt -days {{ certificates_duration }} -extensions v3_ext -extfile /etc/kubernetes/pki/conf/user.conf
+
+# etcd-ca
+- name: Create etcd/ca.key
+  shell: >
+    openssl genrsa -out /etc/kubernetes/pki/etcd/ca.key 2048
+
+- name: Create etcd/ca.crt
+  shell: >
+    openssl req -x509 -new -nodes -key /etc/kubernetes/pki/etcd/ca.key -days {{ certificates_duration }} -out /etc/kubernetes/pki/etcd/ca.crt -extensions v3_ext -config /etc/kubernetes/pki/conf/etcd-ca.conf
+
+# apiserver
+- name: Create apiserver.key
+  shell: >
+    openssl genrsa -out /etc/kubernetes/pki/apiserver.key 2048
+
+- name: Create apiserver.csr
+  shell: >
+    openssl req -new -key /etc/kubernetes/pki/apiserver.key -out /etc/kubernetes/pki/conf/apiserver.csr -config /etc/kubernetes/pki/conf/apiserver.conf
+
+- name: Create apiserver.crt
+  shell: >
+    openssl x509 -req -in /etc/kubernetes/pki/conf/apiserver.csr -CA /etc/kubernetes/pki/ca.crt -CAkey /etc/kubernetes/pki/ca.key -CAcreateserial -out /etc/kubernetes/pki/apiserver.crt -days {{ certificates_duration }} -extensions v3_ext -extfile /etc/kubernetes/pki/conf/apiserver.conf
+
+# apiserver-etcd-client
+- name: Create apiserver-etcd-client.key
+  shell: >
+    openssl genrsa -out /etc/kubernetes/pki/apiserver-etcd-client.key 2048
+
+- name: Create apiserver-etcd-client.csr
+  shell: >
+    openssl req -new -key /etc/kubernetes/pki/apiserver-etcd-client.key -out /etc/kubernetes/pki/conf/apiserver-etcd-client.csr -config /etc/kubernetes/pki/conf/apiserver-etcd-client.conf
+
+- name: Create apiserver-etcd-client.crt
+  shell: > 
+    openssl x509 -req -in /etc/kubernetes/pki/conf/apiserver-etcd-client.csr -CA /etc/kubernetes/pki/etcd/ca.crt -CAkey /etc/kubernetes/pki/etcd/ca.key -CAcreateserial -out /etc/kubernetes/pki/apiserver-etcd-client.crt -days {{ certificates_duration }} -extensions v3_ext -extfile /etc/kubernetes/pki/conf/apiserver-etcd-client.conf
+
+# apiserver-kubelet-client
+- name: Create apiserver-kubelet-client.key
+  shell: >
+    openssl genrsa -out /etc/kubernetes/pki/apiserver-kubelet-client.key 2048
+
+- name: Create apiserver-kubelet-client.csr
+  shell: >
+    openssl req -new -key /etc/kubernetes/pki/apiserver-kubelet-client.key -out /etc/kubernetes/pki/conf/apiserver-kubelet-client.csr -config /etc/kubernetes/pki/conf/apiserver-kubelet-client.conf
+
+- name: Create apiserver-kubelet-client.crt
+  shell: >
+    openssl x509 -req -in /etc/kubernetes/pki/conf/apiserver-kubelet-client.csr -CA /etc/kubernetes/pki/ca.crt -CAkey /etc/kubernetes/pki/ca.key -CAcreateserial -out /etc/kubernetes/pki/apiserver-kubelet-client.crt -days {{ certificates_duration }} -extensions v3_ext -extfile /etc/kubernetes/pki/conf/apiserver-etcd-client.conf
+
+# front-proxy-ca
+- name: Create front-proxy-ca.key
+  shell: >
+    openssl genrsa -out /etc/kubernetes/pki/front-proxy-ca.key 2048
+
+- name: Create front-proxy-ca.crt
+  shell: >
+    openssl req -x509 -new -nodes -key /etc/kubernetes/pki/front-proxy-ca.key -days {{ certificates_duration }} -out /etc/kubernetes/pki/front-proxy-ca.crt -extensions v3_ext -config /etc/kubernetes/pki/conf/front-proxy-ca.conf
+
+# front-proxy-client
+- name: Create front-proxy-client.key
+  shell: >
+    openssl genrsa -out /etc/kubernetes/pki/front-proxy-client.key 2048
+
+- name: Create front-proxy-client.csr
+  shell: >
+    openssl req -new -key /etc/kubernetes/pki/front-proxy-client.key -out /etc/kubernetes/pki/conf/front-proxy-client.csr -config /etc/kubernetes/pki/conf/front-proxy-client.conf
+
+- name: Create front-proxy-client.crt
+  shell: >
+    openssl x509 -req -in /etc/kubernetes/pki/conf/front-proxy-client.csr -CA /etc/kubernetes/pki/front-proxy-ca.crt -CAkey /etc/kubernetes/pki/front-proxy-ca.key -CAcreateserial -out /etc/kubernetes/pki/front-proxy-client.crt -days {{ certificates_duration }} -extensions v3_ext -extfile /etc/kubernetes/pki/conf/front-proxy-client.conf
+
+# etcd/healthcheck-client
+- name: Create etcd/healthcheck-client.key
+  shell: >
+    openssl genrsa -out /etc/kubernetes/pki/etcd/healthcheck-client.key 2048
+
+- name: Create etcd/healthcheck-client.csr
+  shell: >
+    openssl req -new -key /etc/kubernetes/pki/etcd/healthcheck-client.key -out /etc/kubernetes/pki/conf/healthcheck-client.csr -config /etc/kubernetes/pki/conf/healthcheck-client.conf
+
+- name: Create etcd/healthcheck-client.crt
+  shell: > 
+    openssl x509 -req -in /etc/kubernetes/pki/conf/healthcheck-client.csr -CA /etc/kubernetes/pki/etcd/ca.crt -CAkey /etc/kubernetes/pki/etcd/ca.key -CAcreateserial -out /etc/kubernetes/pki/etcd/healthcheck-client.crt -days {{ certificates_duration }} -extensions v3_ext -extfile /etc/kubernetes/pki/conf/front-proxy-client.conf 
+
+# etcd/peer
+- name: Create etcd/peer.key
+  shell: >
+    openssl genrsa -out /etc/kubernetes/pki/etcd/peer.key 2048
+
+- name: Create etcd/peer.csr
+  shell: > 
+    openssl req -new -key /etc/kubernetes/pki/etcd/peer.key -out /etc/kubernetes/pki/conf/peer.csr -config /etc/kubernetes/pki/conf/peer.conf
+
+- name: Create etcd/peer.crt
+  shell: >
+    openssl x509 -req -in /etc/kubernetes/pki/conf/peer.csr -CA /etc/kubernetes/pki/etcd/ca.crt -CAkey /etc/kubernetes/pki/etcd/ca.key -CAcreateserial -out /etc/kubernetes/pki/etcd/peer.crt -days {{ certificates_duration }} -extensions v3_ext -extfile /etc/kubernetes/pki/conf/peer.conf
+
+# etcd/server
+- name: Create etcd/server.key
+  shell: >
+    openssl genrsa -out /etc/kubernetes/pki/etcd/server.key 2048
+
+- name: Create etcd/server.csr
+  shell: >
+    openssl req -new -key /etc/kubernetes/pki/etcd/server.key -out /etc/kubernetes/pki/conf/server.csr -config /etc/kubernetes/pki/conf/server.conf
+
+- name: Create etcd/server.crt
+  shell: >
+    openssl x509 -req -in /etc/kubernetes/pki/conf/server.csr -CA /etc/kubernetes/pki/etcd/ca.crt -CAkey /etc/kubernetes/pki/etcd/ca.key -CAcreateserial -out /etc/kubernetes/pki/etcd/server.crt -days {{ certificates_duration }} -extensions v3_ext -extfile /etc/kubernetes/pki/conf/server.conf
+
+##########################################################################
+# Create kubeconfig
+##########################################################################\
+# Base64 ca.crt
+- name: Get ca.crt
+  shell: >
+    cat /etc/kubernetes/pki/ca.crt
+  register: ca_crt
+
+- name: Base64 ca.crt
+  shell: >
+    echo {{ ca_crt.stdout | b64encode }}
+  register: base64_ca_crt
+
+- name: set var fact
+  set_fact:
+    base_ca_crt: "{{ base64_ca_crt }}"
+
+# Base64 user.crt
+- name: Get user.crt
+  shell: >
+    cat /etc/kubernetes/pki/conf/user.crt
+  register: user_crt
+
+- name: Base64 user.crt
+  shell: >
+    echo {{ user_crt.stdout | b64encode }}
+  register: base64_user_crt
+
+- name: set var fact
+  set_fact:
+    base_crt: "{{ base64_user_crt }}"
+
+# Base64 user.key
+- name: Get user.key
+  shell: >
+    cat /etc/kubernetes/pki/conf/user.key
+  register: user_key
+
+- name: Base64 user.key
+  shell: >
+    echo {{ user_key.stdout | b64encode }}
+  register: base64_user_key
+
+- name: set var fact
+  set_fact:
+    base_key: "{{ base64_user_key }}"
+
+# Copy Template kubeconfig
+- name: Copy admin.conf
+  template:
+    src: admin.conf.j2
+    dest: /etc/kubernetes/admin.conf
+
+- name: Copy controller-manager.conf
+  template:
+    src: controller-manager.conf.j2
+    dest: /etc/kubernetes/controller-manager.conf
+
+- name: Copy kubelet.conf
+  template:
+    src: kubelet.conf.j2
+    dest: /etc/kubernetes/kubelet.conf
+
+- name: Copy scheduler.conf
+  template:
+    src: scheduler.conf.j2
+    dest: /etc/kubernetes/scheduler.conf
+
+##########################################################################
+# kubeadm init
+##########################################################################
+- name: kubeadm init phase control-plane
+  shell: >
+    kubeadm init phase control-plane all --config=/etc/kubernetes/addon/kubeadm-config.yaml
+
+- name: kubeadm init phase etcd
+  shell: >
+    kubeadm init phase etcd local --config=/etc/kubernetes/addon/kubeadm-config.yaml
+
+- name: kubeadm init phase kubelet-start
+  shell: >
+    kubeadm init phase kubelet-start --config=/etc/kubernetes/addon/kubeadm-config.yaml
+
+- wait_for:
+    host: "{{ master_ip }}"
+    port: "{{ kube_apiserver_port }}"
+    delay: 10
+
+- name: kubeadm init phase mark-control-plane
+  shell: >
+    kubeadm init phase mark-control-plane --config=/etc/kubernetes/addon/kubeadm-config.yaml
+
+- name: kubeadm init phase addon
+  shell: >
+    kubeadm init phase addon all --config=/etc/kubernetes/addon/kubeadm-config.yaml
+
+- name: kubeadm init phase bootstrap-token
+  shell: >
+    kubeadm init phase bootstrap-token --config=/etc/kubernetes/addon/kubeadm-config.yaml
+
+- name: kubeadm init phase upload-config
+  shell: >
+    kubeadm init phase upload-config all --config=/etc/kubernetes/addon/kubeadm-config.yaml
+
+- name: make direcotry (.kube)
+  file: path=/root/.kube state=directory
+  register: kubeconfig_addon_dir
+  ignore_errors: True
+
+- name: Copy admin.conf to .kube/config
+  copy:
+    src: /etc/kubernetes/admin.conf
+    dest: /root/.kube/config

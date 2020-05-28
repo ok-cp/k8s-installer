@@ -1,0 +1,10 @@
+---
+#- name: weave cni plugin
+#  include_tasks: weave-cni.yml
+#  when:
+#    - network_cni == 'weave'
+
+- name: calico cni plugin
+  include_tasks: calico-cni.yml
+  when:
+    - network_cni == 'calico'

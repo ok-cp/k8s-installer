@@ -1,0 +1,185 @@
+#- setup variable for cluster installation
+
+########################################################
+# If the network is not working, please set it offline.
+# Installation mode (online / offline)
+########################################################
+install_mode: "online"
+
+########################################################
+## Master configuation
+########################################################
+# master isolation ( yes / no ) 
+master_isolation: "no"
+# For ha mode, please input hostname of virtual ip
+master_host_name: "acc-master"
+# For ha mode, please input virtual ip 
+master_ip: 10.140.0.2
+
+########################################################
+## Docker path
+########################################################
+docker_default_path: "/var/lib/docker"
+
+########################################################
+# nfs setting
+########################################################
+# nfs_setup (internal & external & aws & eks)
+nfs_setup: "internal" 
+nfs_server_ip: 10.140.0.2 
+accordion_nfs_path: "/nfs/data"
+
+########################################################
+# registry setting
+########################################################
+registry_id: accordion
+registry_pw: accadmin
+registry_address: 127.0.0.1
+registry_Port: 30001
+
+########################################################
+# Network Setting 
+########################################################
+# CNI (calico or weave)
+network_cni: "weave"
+# Pod Network (weave)
+IPALLOC_RANGE: "172.32.0.0/12"
+# Pod Network (calico)
+pod_network_cidr: "192.168.0.0/16"
+# docker cidr 
+docker_cidr: "172.17.0.1/16"
+# kubernetes Service Network
+service_cidr: "10.96.0.0/12"
+kubelet_clusterdns: "10.96.0.10"
+kubernetes_clusterip: "10.96.0.1"
+
+########################################################
+# 3master mode( yes / no )
+########################################################
+master_mode: "no"
+master2_ip: 10.140.0.5
+master3_ip: 10.140.0.6
+master2_hostname: "acc-master2"
+master3_hostname: "acc-master3"
+# L4_mode ( L4 / haproxy )
+L4_mode: "haproxy"
+haproxy_port: 8443
+keep_vip: 10.140.0.10
+keep_interface: ens192
+# Set it up if you want to add the master server later
+# If master_mode is "no", it will not work.
+# single_option( yes / no )
+single_option: "no"
+
+########################################################
+# If rsync is not possible, use scp.
+# file_copy_option ( rysnc / scp )
+########################################################
+file_copy_option: "rsync"
+
+########################################################
+## Loadbalancer (HA-mode)
+########################################################
+loadbalancer_apiserver: "false"
+kube_override_hostname: "false"
+apiserver_loadbalancer_domain_name: "www.accordions.co.kr"
+apiserver_loadbalancer_vip: "10.140.0.10"
+
+########################################################
+# If the external IP is set up on the master server, enter the IP.
+########################################################
+master_external_ip: "127.0.0.1"
+
+########################################################
+# kubeadm config 
+########################################################
+kube_apiserver_bind_address: 0.0.0.0
+kube_apiserver_port: 6443
+kube_apiserver_node_port_range: "30000-32767"
+certificates_duration: 3650
+
+########################################################
+## Common
+########################################################
+accordion_version: "1.14"
+docker_version: "docker-ce-18.06.3.ce-3.el7"
+kubernetes_version: "1.14.8"
+timezone: Asia/Seoul
+
+########################################################
+# Accordion Option
+########################################################
+download_keys_enabled: "false"
+add_node_enabled: "false"
+
+########################################################
+## Infra storage (GB)
+########################################################
+influxdb_storage: 50
+elasticsearch_storage: 100
+registry_storage: 500
+jenkins_storage: 100
+postgres_storage: 10
+prometheus_storage: 10
+
+########################################################
+## Monitroing period (kubernetes)
+########################################################
+kube_controller_node_monitor_grace_period: 40s
+kube_controller_node_monitor_period: 5s
+kube_controller_pod_eviction_timeout: 5m0s
+
+########################################################
+## Clound Privider
+########################################################
+# cloud_provider ('gce', 'aws', 'azure', 'openstack', 'vsphere')
+cloud_provider:
+
+########################################################
+## Can be ipvs, iptables
+########################################################
+#kube_proxy_mode: iptables
+
+########################################################
+## 1.10+ admission plugins
+########################################################
+kube_apiserver_enable_admission_plugins: []
+
+########################################################
+## 1.10+ list of disabled admission plugins
+########################################################
+kube_apiserver_disable_admission_plugins: []
+
+########################################################
+## 1.10+ list of extra args
+########################################################
+kube_kubeadm_apiserver_extra_args: {}
+kube_kubeadm_controller_extra_args: {}
+kube_kubeadm_scheduler_extra_args: {}
+
+########################################################
+## List of the preferred NodeAddressTypes to use for kubelet connections.
+########################################################
+kubelet_preferred_address_types: 'InternalDNS,InternalIP,Hostname,ExternalDNS,ExternalIP'
+
+########################################################
+## Kubernetes dir
+########################################################
+kube_addon_dir: /etc/kubernetes/addon
+
+########################################################
+## elastic search install ( yes / no )
+########################################################
+elastic_install: "no"
+
+##########################################
+## accordion GPU monitoring(yes/no)
+##########################################
+gpu_server: "no"
+
+########################################################
+## Installation option(full/kubernetes/accordion/apm)
+########################################################
+install_option: "full"
+# For installation option "apm", please input path
+apm_data_path: "/data"

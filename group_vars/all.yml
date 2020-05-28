@@ -1,0 +1,46 @@
+#- setup variable for cluster installation
+########################################################
+## Master configuation
+########################################################
+master_isolation: "yes"
+master_host_name: "bskim-master"
+master_ip: 10.20.200.125
+
+docker_default_path: "/var/lib/docker"
+docker_version: "docker-ce-18.06.3.ce-3.el7"
+kubernetes_version: "1.18.0"
+timezone: Asia/Seoul
+
+########################################################
+# Network Setting 
+########################################################
+network_cni: "calico"
+pod_network_cidr: "192.168.0.0/16"
+docker_cidr: "172.17.0.1/16"
+service_cidr: "10.96.0.0/12"
+kubelet_clusterdns: "10.96.0.10"
+kubernetes_clusterip: "10.96.0.1"
+
+########################################################
+# kubeadm config 
+########################################################
+kube_apiserver_bind_address: 0.0.0.0
+kube_apiserver_port: 6443
+kube_apiserver_node_port_range: "30000-32767"
+certificates_duration: 3650
+
+kube_controller_node_monitor_grace_period: 40s
+kube_controller_node_monitor_period: 5s
+kube_controller_pod_eviction_timeout: 5m0s
+
+kube_proxy_mode: iptables
+
+kube_apiserver_enable_admission_plugins: []
+kube_apiserver_disable_admission_plugins: []
+kube_kubeadm_apiserver_extra_args: {}
+kube_kubeadm_controller_extra_args: {}
+kube_kubeadm_scheduler_extra_args: {}
+
+kubelet_preferred_address_types: 'InternalDNS,InternalIP,Hostname,ExternalDNS,ExternalIP'
+kube_addon_dir: /etc/kubernetes/addon
+

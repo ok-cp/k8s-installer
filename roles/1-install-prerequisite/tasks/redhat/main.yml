@@ -1,0 +1,28 @@
+---
+- name: Disable and stop firewalld
+  service: name=firewalld state=stopped enabled=no
+  ignore_errors: yes
+
+- name: Remove swapfile from /etc/fstab
+  mount:
+    name: swap
+    fstype: swap
+    state: absent
+
+- name: Turn swap off
+  shell: swapoff -a
+
+- name: Set timezone to {{ timezone }}
+  timezone: name={{ timezone }}
+
+- name: Copy 00-system.conf
+  copy: src=00-system.conf dest=/usr/lib/sysctl.d/00-system.conf
+
+#- name: Set bridge-nf-call-iptables to 1
+#  shell: >
+#    echo "1" > /proc/sys/net/bridge/bridge-nf-call-iptables
+
+#- name: Set bridge-nf-call-ip6tables to 1
+#  shell: >
+#    echo "1" > /proc/sys/net/bridge/bridge-nf-call-ip6tables
+

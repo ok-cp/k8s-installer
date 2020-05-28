@@ -1,0 +1,30 @@
+---
+- name: install-prerequisite
+  hosts: all
+
+  roles:
+    - role: 1-install-prerequisite
+
+  gather_facts: true
+  any_errors_fatal: yes
+
+- name: Install docker, kubelet, kubectl, kubeadm, kube-cni
+  hosts: all
+
+  roles:
+    - role: 2-install-docker 
+    - role: 3-install-kube
+
+- name: kubeadm init & join
+  hosts: all
+
+  roles:
+    - role: 4-kube-init-join
+
+- name: install cni
+  hosts: master
+
+  roles:
+    - role: 5-install-cni
+
+

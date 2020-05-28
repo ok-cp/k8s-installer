@@ -1,0 +1,30 @@
+---
+- name: Template kube RPM repo
+  template:
+    src: kubernetes.repo.j2
+    dest: /etc/yum.repos.d/kubernetes.repo
+
+- name: Install required packages
+  shell: >
+    sudo yum -y install \
+      yum-versionlock \
+      kubectl-{{ kubernetes_version }}-0.x86_64 \
+      kubelet-{{ kubernetes_version }}-0.x86_64 \
+      kubeadm-{{ kubernetes_version }}-0.x86_64 \
+      kubernetes-cni-0.7.5-0.x86_64
+
+#- name: Copy jq rpms
+#  copy:
+#    src: jq-1.5-1.el7.art.x86_64.rpm
+#    dest: /tmp/jq-1.5-1.el7.art.x86_64.rpm
+
+#- name: Copy oniguruma rpms
+#  copy:
+#    src: oniguruma-5.9.5-3.el7.x86_64.rpm
+#    dest: /tmp/oniguruma-5.9.5-3.el7.x86_64.rpm
+
+#- name: jq install
+#  shell: >
+#    rpm -Uvh /tmp/*.rpm
+#  ignore_errors: yes
+

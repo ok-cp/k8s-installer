@@ -1,0 +1,11 @@
+---
+- name: remove docker
+  yum:
+    name: "{{ item }}"
+    state: absent
+  with_items:
+    - docker
+    - docker-common
+    - docker-selinux
+    - docker-engine
+    - container-selinux

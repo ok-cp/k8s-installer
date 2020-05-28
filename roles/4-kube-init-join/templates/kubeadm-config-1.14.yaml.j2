@@ -1,0 +1,62 @@
+apiVersion: kubeadm.k8s.io/v1beta1
+kind: InitConfiguration
+bootstrapTokens:
+- ttl: "0"
+localAPIEndpoint:
+{% if loadbalancer_apiserver is defined and loadbalancer_apiserver == "true" %}
+  advertiseAddress: {{ apiserver_loadbalancer_vip }}
+{% endif %}
+{% if loadbalancer_apiserver is defined and loadbalancer_apiserver == "false" %}
+  advertiseAddress: {{ hostvars[inventory_hostname]['ansible_default_ipv4']['address'] }}
+{% endif %}
+  bindPort: {{ kube_apiserver_port }}
+---
+apiVersion: kubelet.config.k8s.io/v1beta1
+kind: KubeletConfiguration
+failSwapOn: false
+cgroupDriver: systemd
+---
+apiVersion: kubeadm.k8s.io/v1beta1
+kind: ClusterConfiguration
+networking:
+  serviceSubnet: {{ service_cidr }}
+  podSubnet: {{ pod_network_cidr }}
+kubernetesVersion: {{ kubernetes_version }}
+apiServer:
+  extraArgs:
+    bind-address: {{ kube_apiserver_bind_address }}
+{% if kube_apiserver_enable_admission_plugins|length > 0 %}
+    enable-admission-plugins: {{ kube_apiserver_enable_admission_plugins | join(',') }} 
+{% endif %}
+{% if kube_apiserver_disable_admission_plugins|length > 0 %}
+    disable-admission-plugins: {{ kube_apiserver_disable_admission_plugins | join(',') }} 
+{% endif %}
+{% if  kubernetes_version >= "1.9" %}
+    endpoint-reconciler-type: lease
+{% endif %}
+    service-node-port-range: {{ kube_apiserver_node_port_range }}
+    kubelet-preferred-address-types: "{{ kubelet_preferred_address_types }}"
+    allow-privileged: "true"
+{% for key in kube_kubeadm_apiserver_extra_args %}
+    {{ key }}: "{{ kube_kubeadm_apiserver_extra_args[key] }}"
+{% endfor %}
+  certSANs:
+{% for san in  apiserver_sans.split(' ') | unique %}
+  - {{ san }}
+{% endfor %}
+controllerManager:
+  extraArgs:
+    node-monitor-grace-period: {{ kube_controller_node_monitor_grace_period }}
+    node-monitor-period: {{ kube_controller_node_monitor_period }}
+    pod-eviction-timeout: {{ kube_controller_pod_eviction_timeout }}
+{% for key in kube_kubeadm_controller_extra_args %}
+    {{ key }}: "{{ kube_kubeadm_controller_extra_args[key] }}"
+{% endfor %}
+{% if kube_kubeadm_scheduler_extra_args|length > 0 %}
+scheduler:
+  extraArgs:
+{% for key in kube_kubeadm_scheduler_extra_args %}
+    {{ key }}: "{{ kube_kubeadm_scheduler_extra_args[key] }}"
+{% endfor %}
+{% endif %}
+nodeName: {{ inventory_hostname }}

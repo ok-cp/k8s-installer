@@ -1,0 +1,49 @@
+---
+- name: Teardown kube nodes
+  shell: >
+    kubeadm reset -f
+  ignore_errors: True
+
+- name: Remove all semaphores
+  file:
+    dest: "{{ item }}"
+    state: absent
+  with_items:
+    - "/etc/.kubeadm-complete"
+#    - "{{ kubectl_home }}/.kubeadm-podnetwork-complete"
+    - "/etc/.kubeadm-joined"
+#    - "{{ kubectl_home }}/admin.conf"
+  ignore_errors: True
+
+- name: Remove kubectl
+  yum: name=kubectl-{{ kubernetes_version }}-0.x86_64 state=absent
+  ignore_errors: True
+
+- name: Remove kubelet
+  yum: name=kubelet-{{ kubernetes_version }}-0.x86_64 state=absent
+  ignore_errors: True
+
+- name: Remove kubeadm
+  yum: name=kubeadm-{{ kubernetes_version }}-0.x86_64 state=absent
+  ignore_errors: True
+
+- name: Remove kubernetes-cni
+  yum: name=kubernetes-cnt-{{ kubernetes_version }}-0.x86_64 state=absent
+  ignore_errors: True
+
+- name: remove docker
+  yum:
+    name: "{{ item }}"
+    state: absent
+  with_items:
+    - docker
+    - docker-common
+    - docker-selinux
+    - docker-engine
+    - container-selinux
+    - docker-ce
+    - docker-ce-selinux
+  ignore_errors: True
+
+- name : Unlock yum version
+  shell: yum versionlock clear

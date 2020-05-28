@@ -1,0 +1,6 @@
+---
+- name: install package
+  include_tasks: 0-install-package.yml
+
+- name: kubernetes setting
+  include_tasks: 1-kubernetes-setting.yml

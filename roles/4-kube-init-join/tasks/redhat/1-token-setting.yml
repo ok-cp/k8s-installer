@@ -1,0 +1,19 @@
+---
+############################### Delete Token ##############################
+- name: Get the token id from the master initialization
+  shell: "echo `kubeadm token list | tail -n1 | awk '{print $1}'`"
+  register: kubeadm_token
+
+############################### Setting Token ###############################
+- name: set var fact
+  set_fact:
+    token: "{{kubeadm_token}}"
+  when: kubeadm_token.changed
+
+- name: print output of kubeadm_token
+  vars:
+    join_token: "{{ token.stdout_lines }}"
+  debug: msg="{{ token.stdout_lines }}"
+  when: inventory_hostname in groups['master']
+  tags:
+    - output

@@ -1,0 +1,34 @@
+global
+  log 127.0.0.1 local0
+  log 127.0.0.1 local1 notice
+  tune.ssl.default-dh-param 2048
+
+defaults
+  log global
+  mode http
+  option dontlognull
+  timeout connect 5000ms
+  timeout client  600000ms
+  timeout server  600000ms
+
+listen stats
+    bind :9090
+    mode http
+    balance
+    stats uri /haproxy_stats
+    stats auth admin:admin123
+    stats admin if TRUE
+
+frontend monitoring-front
+    bind *:80
+    acl host_http hdr(host) -i {{ master_ip }}
+    acl sub_path path -m beg /
+
+    use_backend monitoring if host_http sub_path 
+
+backend monitoring
+    http-request set-header Host {{ master_ip }}
+    server node1 {{ master_ip }}:30000
+    
+    acl is_root path -i /
+    http-request set-path /monitoring/external/apm if is_root
