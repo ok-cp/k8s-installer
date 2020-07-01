@@ -1,0 +1,2 @@
+if $programname contains "systemd" and ($msg contains "Starting libcontainer" or $msg contains "Removed slice" or $msg contains "Stopping libcontainer" or $msg contains "Scope libcontainer" or $msg contains "Created slice libcontainer") then stop
+if $programname contains "kubelet" and ($msg contains "_systemd_test_default.slice" or $msg contains "systemd-test-default-dependencies.scope") then stop

@@ -1,9 +1,0 @@
----
-- name: Uninstall Docker
-  include_tasks: 0-remove-docker.yml
-
-- name: Install Docker Package
-  include_tasks: 1-yum-install.yml
-
-- name: Docker Setting
-  include_tasks: 2-docker-setting.yml

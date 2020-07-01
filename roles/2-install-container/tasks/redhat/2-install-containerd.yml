@@ -1,0 +1,28 @@
+---
+- name: "Create a directory for containerd config"
+  file: path=/etc/containerd state=directory
+
+- name: "Add containerd config file"
+  blockinfile:
+    path: /etc/containerd/config.toml
+    create: yes
+    block: |
+      [plugins.cri]
+        enable_tls_streaming = true
+- name: "Start Containerd"
+  systemd: name=containerd daemon_reload=yes state=started enabled=yes
+
+- name: "Load br_netfilter kernel module"
+  modprobe:
+    name: br_netfilter
+    state: present
+
+- name: "Set bridge-nf-call-iptables" 
+  sysctl:
+    name: net.bridge.bridge-nf-call-iptables
+    value: 1
+
+- name: "Set ip_forward" 
+  sysctl:
+    name: net.ipv4.ip_forward
+    value: 1

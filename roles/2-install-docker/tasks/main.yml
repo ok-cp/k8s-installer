@@ -1,6 +1,0 @@
----
-#- include: debian/main.yml
-#  when: ansible_os_family == "Debian"
-
-- include: redhat/main.yml
-  when: ansible_os_family == "RedHat"

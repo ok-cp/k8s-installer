@@ -1,0 +1,19 @@
+---
+- name: "Install required packages on CentOS "
+  yum:
+    name: "{{ item }}"
+    state: latest
+  with_items:
+    - unzip
+    - tar
+    - btrfs-progs
+    - libseccomp
+    - util-linux
+    - socat
+    - libselinux-python
+    - python-setuptools
+    - easy_install pip
+    - yum-utils
+    - policycoreutils-python
+    - device-mapper-persistent-data
+    - lvm2

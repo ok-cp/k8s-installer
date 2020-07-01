@@ -1,0 +1,49 @@
+---
+- name: Creates docker directory
+  file: path={{ docker_default_path }} state=directory
+  when: inventory_hostname in groups['master']
+  ignore_errors: yes
+
+- name: docker directory change1
+  shell: >
+    sed -i '/ExecStart/d' /lib/systemd/system/docker.service
+
+- name: docker directory change2
+  shell: >
+    sed -i '10a ExecStart=/usr/bin/dockerd -g {{ docker_default_path }} --bip {{ docker_cidr }} --exec-opt native.cgroupdriver=systemd' /lib/systemd/system/docker.service
+
+- name: Reload systemd
+  command: systemctl daemon-reload
+
+- name: Add ignore-systemd-session-slice.conf
+  template:
+    src: ignore-systemd-session-slice.conf.j2
+    dest: /etc/rsyslog.d/ignore-systemd-session-slice.conf
+
+- name: Restart rsyslog service
+  service:
+    name: "{{ item }}"
+    state: restarted
+    enabled: yes
+  with_items:
+    - rsyslog
+
+- name: Start Docker service
+  service:
+    name: docker
+    state: started
+    enabled: yes
+  become: yes
+
+#- name: docker config change
+#  template:
+#    src: daemon.json.j2
+#    dest: /etc/docker/daemon.json
+#
+#- name: Restart Docker service
+#  service:
+#    name: docker
+#    state: restarted
+#    enabled: yes
+#  become: yes
+

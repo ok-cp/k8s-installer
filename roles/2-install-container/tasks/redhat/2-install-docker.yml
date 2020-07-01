@@ -1,0 +1,62 @@
+---
+- name: "Install required packages on CentOS "
+  yum:
+    name: "{{ item }}"
+    state: latest
+  with_items:
+    - unzip
+    - tar
+    - btrfs-progs
+    - libseccomp
+    - util-linux
+    - socat
+    - libselinux-python
+    - python-setuptools
+    - easy_install pip
+    - yum-utils
+    - policycoreutils-python
+    - device-mapper-persistent-data
+    - lvm2
+
+
+
+# ---
+# - name: Install python setup tools
+#   yum: name=python-setuptools
+
+# - name: Install Pypi
+#   shell: easy_install pip
+
+# - name: Install docker-py module.
+#   shell: /usr/bin/pip install --ignore-installed docker-py
+
+# - name: Install yum-utils
+#   yum:
+#     name: yum-utils
+#     state: latest
+
+# - name: Install policycoreutils-python
+#   yum:
+#     name: policycoreutils-python
+#     state: latest
+
+# - name: Install device-mapper-persistent-data
+#   yum:
+#     name: device-mapper-persistent-data
+#     state: latest
+
+# - name: Install lvm2
+#   yum:
+#     name: lvm2
+#     state: latest
+
+- name: Add Docker repo
+  get_url:
+    url: https://download.docker.com/linux/centos/docker-ce.repo
+    dest: /etc/yum.repos.d/docer-ce.repo
+  become: yes
+
+- name: Install Docker
+  shell: |
+    yum install -y --setopt=obsoletes=0 \
+    {{ docker_version }}
