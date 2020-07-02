@@ -1,6 +1,16 @@
 ---
-- name: install package
-  include_tasks: 0-install-package.yml
+- name: install Kubernetes
+  include_tasks: 0-install-kube.yml
 
-- name: kubernetes setting
-  include_tasks: 1-kubernetes-setting.yml
+- name: kubernetes setting(docker)
+  include_tasks: 1-kube-docker-setting.yml
+  when:
+   - container_type == 'docker'
+
+- name: kubernetes setting(containerd)
+  include_tasks: 1-kube-containerd-setting.yml
+  when:
+   - container_type == 'containerd'
+
+- name: kubernetes Alias
+  include_tasks: 2-kube-alias.yml

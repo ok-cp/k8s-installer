@@ -28,3 +28,19 @@
 #    rpm -Uvh /tmp/*.rpm
 #  ignore_errors: yes
 
+- name: Lock versions
+  shell: >
+    sudo yum versionlock add kubectl kubelet kubeadm kubernetes-cni docker
+
+- name: Create kubelet service directory
+  file: path=/etc/systemd/system/kubelet.service.d state=directory
+  register: kubelet_service_dir
+  ignore_errors: True
+
+- name: Template kubeadm
+  template:
+    src: 10-kubeadm.j2
+    dest: /etc/systemd/system/kubelet.service.d/10-kubeadm.conf
+  when:
+    - inventory_hostname in groups['master']
+

@@ -1,9 +1,25 @@
 ---
 - name: Uninstall Docker
   include_tasks: 0-remove-docker.yml
+  when: 
+   - container_type == "docker"
 
-- name: Install Docker Package
-  include_tasks: 1-yum-install.yml
+- name: Install Docker
+  include_tasks: 1-install-docker.yml
+  when: 
+   - container_type == "docker"
 
-- name: Docker Setting
+- name: Setting Docker
   include_tasks: 2-docker-setting.yml
+  when: 
+   - container_type == "docker"
+
+- name: Binaries Containerd
+  include_tasks: 0-binaries-containerd.yml
+  when: container_type == "containerd"
+
+- name: Install Containerd
+  include_tasks: 1-install-containerd.yml
+  when: container_type == "containerd"
+
+

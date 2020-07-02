@@ -8,11 +8,16 @@
   gather_facts: true
   any_errors_fatal: yes
 
-- name: Install docker, kubelet, kubectl, kubeadm, kube-cni
+- name: Install Container(Docker or Containerd)
   hosts: all
 
   roles:
-    - role: 2-install-docker 
+    - role: 2-install-container 
+
+- name: Install kubelet, kubectl, kubeadm, kube-cni
+  hosts: all
+
+  roles:
     - role: 3-install-kube
 
 - name: kubeadm init & join

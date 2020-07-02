@@ -1,4 +1,24 @@
 ---
+- name: "Install required packages on CentOS "
+  yum:
+    name: "{{ item }}"
+    state: latest
+  with_items:
+    - unzip
+    - tar
+    - btrfs-progs
+    - libseccomp
+    - util-linux
+    - socat
+    - libselinux-python
+    - python-setuptools
+#    - easy_install 
+#    - pip
+    - yum-utils
+    - policycoreutils-python
+    - device-mapper-persistent-data
+    - lvm2
+
 - name: Disable and stop firewalld
   service: name=firewalld state=stopped enabled=no
   ignore_errors: yes
@@ -17,6 +37,22 @@
 
 - name: Copy 00-system.conf
   copy: src=00-system.conf dest=/usr/lib/sysctl.d/00-system.conf
+
+- name: "Load br_netfilter kernel module"
+  modprobe:
+    name: br_netfilter
+    state: present
+
+- name: "Set bridge-nf-call-iptables" 
+  sysctl:
+    name: net.bridge.bridge-nf-call-iptables
+    value: 1
+
+- name: "Set ip_forward" 
+  sysctl:
+    name: net.ipv4.ip_forward
+    value: 1
+
 
 #- name: Set bridge-nf-call-iptables to 1
 #  shell: >
