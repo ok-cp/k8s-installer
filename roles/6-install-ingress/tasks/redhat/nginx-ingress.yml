@@ -1,0 +1,18 @@
+---
+- name: Apply nginx ingress - Bare-metal
+  shell: >
+    kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v0.34.1/deploy/static/provider/baremetal/deploy.yaml
+
+- name: list kubernetes' pods
+  shell: >
+    kubectl get pods --all-namespaces
+  changed_when: false
+  register: kubectl_get_pods
+  tags:
+    - output
+
+- name: print output of `kubectl get pods --all-namespaces`
+  debug: msg="{{ kubectl_get_pods.stdout_lines }}"
+  tags:
+    - output
+

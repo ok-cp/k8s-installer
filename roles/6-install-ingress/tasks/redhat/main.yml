@@ -1,0 +1,6 @@
+---
+- name: install nginx ingress controller
+  include_tasks: nginx-ingress.yml
+  when:
+    - ingress_controller == 'nginx'
+

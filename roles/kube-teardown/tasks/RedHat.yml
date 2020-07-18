@@ -45,5 +45,23 @@
     - docker-ce-selinux
   ignore_errors: True
 
+- name: "Stop Containerd"
+  systemd: name=containerd state=stopped
+
+- name: remove containerd
+  file:
+    path: /etc/containerd
+    state: absent
+
+- name: remove containerd
+  file:
+    path: /usr/local/bin/containerd
+    state: absent
+
+- name: remove containerd
+  file:
+    path: /etc/systemd/system/containerd.service
+    state: absent
+
 - name : Unlock yum version
   shell: yum versionlock clear

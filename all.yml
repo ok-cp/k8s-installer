@@ -32,4 +32,9 @@
   roles:
     - role: 5-install-cni
 
+- name: install Ingress Controller
+  hosts: master
+
+  roles:
+    - role: 6-install-ingress
 
