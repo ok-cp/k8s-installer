@@ -1,0 +1,12 @@
+---
+- name: Download Helm Binary 
+  unarchive:
+    src: "https://get.helm.sh/helm-v3.3.0-rc.2-linux-amd64.tar.gz"
+    dest: "/"
+    remote_src: yes
+
+- name: Install Helm Bin
+  shell: >
+    mv /linux-amd64/helm /usr/local/bin/helm
+
+

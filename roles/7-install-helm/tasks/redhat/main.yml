@@ -1,0 +1,6 @@
+---
+- name: install helm chart
+  include_tasks: install-helm.yml
+  when:
+    - helm_enabled == 'yes'
+

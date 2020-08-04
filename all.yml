@@ -38,3 +38,9 @@
   roles:
     - role: 6-install-ingress
 
+- name: install helm
+  hosts: master
+
+  roles:
+    - role: 7-install-helm
+

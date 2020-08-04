@@ -47,20 +47,30 @@
 
 - name: "Stop Containerd"
   systemd: name=containerd state=stopped
+  when: container_type == "containerd"
+
 
 - name: remove containerd
   file:
     path: /etc/containerd
     state: absent
+  when: container_type == "containerd"
 
 - name: remove containerd
   file:
     path: /usr/local/bin/containerd
     state: absent
+  when: container_type == "containerd"
 
 - name: remove containerd
   file:
     path: /etc/systemd/system/containerd.service
+    state: absent
+  when: container_type == "containerd"
+
+- name: remove kubelet.service.d
+  file:
+    path: /etc/systemd/system/kubelet.service.d/
     state: absent
 
 - name : Unlock yum version

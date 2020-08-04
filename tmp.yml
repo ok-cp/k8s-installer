@@ -1,0 +1,6 @@
+- name: install helm
+  hosts: master
+
+  roles:
+    - role: 7-install-helm
+
